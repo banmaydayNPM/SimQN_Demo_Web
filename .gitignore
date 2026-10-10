@@ -14,3 +14,4 @@ qns/**/*.pyd
 !docs
 .idea
 .eggs
+*.docx

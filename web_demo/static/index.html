@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Khám phá khả năng tạo mạng nhiều node của thư viện SimQN.">
+  <title>SimQN — Không gian mạng</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="SimQN trang chủ"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 8 24 6 20 25 7 8 5 24 24 6"/><circle cx="7" cy="8" r="3"/><circle cx="24" cy="6" r="3"/><circle cx="20" cy="25" r="3"/><circle cx="5" cy="24" r="3"/></svg>SimQN<span>NETWORK EXPLORER</span></a>
+    <span class="header-note">Thư viện mô phỏng mạng lượng tử</span>
+  </header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">TỪ MỘT NODE ĐẾN CẢ MỘT MẠNG</p><h1>Không gian mạng.</h1><p>Tạo mạng, khám phá kết nối, nhìn rõ cấu trúc.</p></div><span class="engine" id="engine">Đang kết nối SimQN…</span></section>
+    <div class="workspace">
+      <aside class="config">
+        <div class="section-head"><h2>Tạo mạng</h2><span class="step">01 / CẤU HÌNH</span></div>
+        <form id="network-form">
+          <fieldset id="config-fields">
+            <label for="topology">Cấu trúc mạng</label>
+            <select id="topology" name="topology"><option value="random">Ngẫu nhiên</option><option value="grid">Lưới vuông</option><option value="tree">Cây nhị phân</option><option value="line">Chuỗi tuyến tính</option></select>
+            <p class="field-note" id="topology-note">Các node kết nối ngẫu nhiên thành một mạng liên thông.</p>
+            <div class="label-row"><label for="nodes">Số node</label><span>tối đa 1.000</span></div>
+            <input id="nodes" name="nodes" type="number" min="2" max="1000" step="1" value="100" required>
+            <div class="presets" aria-label="Chọn nhanh số node"><button type="button" data-count="25">25</button><button type="button" data-count="100" class="active">100</button><button type="button" data-count="500">500</button><button type="button" data-count="1000">1.000</button></div>
+            <p class="field-note" id="count-note">Thử một mạng lớn để thấy nhiều kết nối hơn.</p>
+            <label for="links">Số kênh kết nối</label>
+            <input id="links" name="links" type="number" min="99" max="4950" value="200" required aria-describedby="links-note">
+            <p class="field-note" id="links-note">Mỗi kênh nối hai node. Tất cả node thuộc cùng một mạng liên thông.</p>
+            <details class="channel-options"><summary>Thuộc tính node &amp; kênh</summary><div class="channel-fields">
+            <label for="memory">Bộ nhớ mỗi node <span class="unit">qubit</span></label>
+            <input id="memory" name="memory" type="number" min="1" max="1000" value="50" required>
+            <label for="delay">Độ trễ mỗi kênh <span class="unit">ms</span></label>
+            <input id="delay" name="delay_ms" type="number" min="0" max="1000" value="10" required>
+            <label for="bandwidth">Băng thông mỗi kênh <span class="unit">qubit/s</span></label>
+            <input id="bandwidth" type="number" min="1" max="10000" value="1000" required>
+            <label for="loss">Tỷ lệ mất mỗi kênh <span class="unit">%</span></label>
+            <input id="loss" type="number" min="0" max="100" value="0" required>
+            </div></details>
+            <button class="primary" id="create" type="submit">Tạo mạng <span aria-hidden="true">↗</span></button>
+          </fieldset>
+          <p id="message" class="form-message" role="status" aria-live="polite"></p>
+        </form>
+        <div class="model-note"><span class="tiny-mark" aria-hidden="true">◈</span><div><strong>Được tạo bởi SimQN</strong><p>Node, kênh lượng tử và bộ nhớ được khởi tạo trực tiếp từ thư viện Python.</p></div></div>
+      </aside>
+      <section class="network-panel" aria-label="Sơ đồ mạng">
+        <div class="network-toolbar"><div><h2 id="network-name">Mạng ngẫu nhiên</h2><span id="class-name">RandomTopology</span></div><div class="toolbar-actions"><label class="checkbox"><input id="labels" type="checkbox">Tên node</label><button id="fit" type="button" title="Đưa toàn bộ mạng vào khung">Vừa khung</button></div></div>
+        <div class="stage" id="stage">
+          <canvas id="network" aria-label="Sơ đồ node và kênh lượng tử. Dùng mục Chọn node bên dưới để xem thuộc tính bằng bàn phím."></canvas>
+          <div class="stage-caption"><span class="dot"></span>Node lượng tử <span class="line-key"></span>Kênh lượng tử</div>
+          <div class="stage-empty" id="stage-empty">Đang tạo mạng từ SimQN…</div>
+          <div class="zoom-controls"><button id="zoom-in" type="button" aria-label="Phóng to">+</button><output id="zoom-level">100%</output><button id="zoom-out" type="button" aria-label="Thu nhỏ">−</button></div>
+          <div class="stage-hint">Kéo để di chuyển · Cuộn để phóng to · Chọn node để khám phá</div>
+        </div>
+        <div class="metrics" aria-live="polite"><div><span>Node lượng tử</span><strong id="node-total">—</strong></div><div><span>Kênh kết nối</span><strong id="link-total">—</strong></div><div><span>Kết nối / node <small>trung bình</small></span><strong id="degree-total">—</strong></div><div><span>Trạng thái mạng</span><strong class="connection" id="connection">—</strong></div></div>
+      </section>
+    </div>
+    <section class="transmission inspector" aria-labelledby="transmission-title">
+      <div class="inspector-heading"><div><p class="eyebrow">02 / TRUYỀN QUBIT</p><h2 id="transmission-title">Từ node A đến node B</h2></div><span class="transmission-note">1 request = 1 qubit ở trạng thái |0⟩</span></div>
+      <form id="transmit-form"><fieldset id="transmit-fields" disabled>
+        <div><label for="source">Node nguồn A</label><select id="source" required></select></div>
+        <div><label for="target">Node đích B</label><select id="target" required></select></div>
+        <div><label for="requests">Số request</label><input id="requests" type="number" min="1" max="1000" value="10" required></div>
+        <div><label for="rate">Tốc độ gửi <span class="unit">qubit/s</span></label><input id="rate" type="number" min="1" max="10000" value="100" required></div>
+        <button type="submit" id="transmit">Truyền qubit →</button>
+      </fieldset></form>
+      <p class="form-message" id="transmit-message" role="status" aria-live="polite">Tạo mạng rồi chọn hai node để bắt đầu.</p>
+      <div id="transmit-result" hidden>
+        <div class="route-caption">Đường đi ít chặng nhất <span id="route-count"></span></div><div id="route" class="route" aria-label="Đường truyền qubit"></div>
+        <dl class="transmit-metrics"><div><dt>Qubit đã gửi</dt><dd id="sent-total">—</dd></div><div><dt>Đã đến B</dt><dd id="received-total">—</dd></div><div><dt>Bị mất</dt><dd id="lost-total">—</dd></div><div><dt>Tổng thời gian truyền tin</dt><dd id="elapsed-total">—</dd></div></dl>
+        <section class="timing-details" aria-labelledby="timing-title">
+          <h3 id="timing-title">Thời gian được tính thế nào?</h3>
+          <p id="timing-summary"></p>
+          <div class="timing-flow" aria-label="Các giai đoạn của một qubit"><span>Phát request tại A</span><span aria-hidden="true">→</span><span>Chờ kênh + đi qua từng chặng</span><span aria-hidden="true">→</span><span>Nhận tại B</span></div>
+          <dl class="timing-grid">
+            <div><dt>Khoảng phát request tại A</dt><dd id="emission-time">—</dd><p id="emission-note"></p></div>
+            <div><dt>Độ trễ đường đi, chưa tính chờ</dt><dd id="propagation-time">—</dd><p id="propagation-note"></p></div>
+            <div><dt>Qubit đầu tiên đến B</dt><dd id="first-arrival-time">—</dd><p>Mốc tính từ lúc phát request đầu tiên tại A.</p></div>
+            <div><dt>Qubit cuối cùng đến B</dt><dd id="last-arrival-time">—</dd><p>Lần nhận cuối trong số qubit đến được B.</p></div>
+            <div><dt>Thời gian A → B trung bình</dt><dd id="latency-time">—</dd><p>Từ lúc phát request của từng qubit đến lúc nhận nó tại B. Chỉ tính qubit nhận được.</p></div>
+            <div><dt>Thời gian chờ kênh trung bình</dt><dd id="queue-time">—</dd><p>Phần chờ do băng thông, cộng trên đường đi của mỗi qubit nhận được. Đã nằm trong thời gian A → B.</p></div>
+          </dl>
+          <div id="timing-equation" class="timing-equation" aria-label="Phân tích thời điểm nhận qubit cuối"></div>
+          <p id="timing-wall" class="timing-wall"></p>
+        </section>
+        <details class="hop-details"><summary>Kết quả từng kênh</summary><div class="hop-table"><table><thead><tr><th scope="col">Kênh truyền</th><th scope="col">Gửi</th><th scope="col">Nhận</th><th scope="col">Mất</th></tr></thead><tbody id="hop-results"></tbody></table></div></details>
+      </div>
+      <p class="simulation-note">Mô phỏng chuyển tiếp qubit qua từng kênh; thời gian là thời gian mô phỏng. Bộ nhớ chưa tham gia lưu qubit; chưa mô phỏng rối lượng tử hoặc teleportation.</p>
+    </section>
+    <section class="inspector" aria-labelledby="inspector-title">
+      <div class="inspector-heading"><div><p class="eyebrow">03 / KHÁM PHÁ</p><h2 id="inspector-title">Bên trong một node</h2></div><label class="node-picker" for="node-select">Chọn node<select id="node-select" disabled><option>Đang tải…</option></select></label></div>
+      <div class="inspector-body"><div class="node-summary"><span class="node-symbol" aria-hidden="true">◉</span><div><strong id="selected-name">—</strong><span>QNode</span></div></div><dl><div><dt>Kênh trực tiếp</dt><dd id="selected-degree">—</dd></div><div><dt>Dung lượng bộ nhớ</dt><dd id="selected-memory">—</dd></div><div><dt>Độ trễ kênh</dt><dd id="selected-delay">—</dd></div><div><dt>Băng thông kênh</dt><dd id="selected-bandwidth">—</dd></div></dl><div class="neighbors"><span>Kết nối với</span><div id="neighbors">Chọn một node trên sơ đồ.</div></div></div>
+    </section>
+    <footer><span>SimQN / Topology playground</span><span>Tạo mạng và truyền qubit bằng bộ mô phỏng SimQN</span></footer>
+  </main>
+</body>
+</html>
